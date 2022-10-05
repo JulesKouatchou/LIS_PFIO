@@ -52,9 +52,59 @@ File modified only to add the profiling tool:
 - `core/LIS_domainMod.F90`: 
 - `core/LIS_paramsMod.F90`: 
 
-A new file, `LIS_PFIO_HistoryMod.F90` was created to include PFIO related calls to produce LIS HISTORY.
-PFIO offers the option (see the above section) to run the code using either the standard `mpirun` command or an IO server (reserved for producing HISTORY only).
-Because the LIS code only has one collection (one HISTORY file), only one output server node (with any number of backend cores) is needed to use PFIO. Basically, we will have the command (assuming that we have 28 cores per node):
+## Compiling the Code
+
+The compiling procedures remain the same as in the original LIS code.
+Users need to first run the configuration:
+
+```bash
+   ./configure
+```
+
+In the dialogue, there is now a new option:
+
+```bash
+   Use PFIO to produce nc4 HISTORY (1-yes, 0-no, default=0):
+```
+
+where with the default value (`0`) will generate a code that works without PFIO, i.e., the original LIS code (with not PFIO library and related calls).
+
+In addition, the folowing configuration settings:
+
+```bash
+   NETCDF use shuffle filter? (1-yes, 0-no, default = 1): 
+   NETCDF use deflate filter? (1-yes, 0-no, default = 1): 
+   NETCDF use deflate level? (1 to 9-yes, 0-no, default = 9): 
+```
+
+are no longer needed because the three parameters are now set at run time in the `lis.config` file.
+
+When the configuration is done, users need to execute the compilation script:
+
+```bash
+   ./compile
+```
+
+to create the executable file `LIS`.
+Note that if PFIO is not selected during the configuration step, the excutable file will be the standard `LIS` file (without any PFIO reference).
+
+## Running the Code
+
+Here, we assume that the gererated executable has PFIO references.
+PFIO offers the option to run the code using either the standard `mpirun` command or an IO server (reserved for producing HISTORY only).
+Because the LIS code only has one collection (one HISTORY file), we implemented the capability to create virtual HISTORY collections, 
+where the number of collection is chosed at run time in the `lis.config` file.
+The file has the settings:
+
+```
+   Profiling Tool:                    yes    # do you want to profile the code (no as default)? 
+   num PFIO virtual collections:      4      # number of virtual collections (1 as default)
+   netCDF shuffle filter:             0
+   netCDF deflate filter:             1
+   netCDF deflate level:              1      # deflate level (0 as default)
+```
+
+only one output server node (with any number of backend cores) is needed to use PFIO. Basically, we will have the command (assuming that we have 28 cores per node):
 
 ```
    set num_cores_per_node = 28
