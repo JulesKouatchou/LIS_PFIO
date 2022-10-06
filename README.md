@@ -53,14 +53,34 @@ To achieve it, we made the decision to:
 
 Files modified mainly to accommodate PFIO:
 
-- `arc/Config.pl`: 
-- `offline/lisdrv.F90`: reorga
-- `core/LIS_coreMod.F90`: 
-- `core/LIS_surfaceModelMod.F90`: 
-- `core/LIS_PRIV_rcMod.F90`: 
-- `core/LIS_readConfigMod.F90`: 
+`arc/Config.pl`: 
+- Added a question for selecting PFIO or not.
+- If PFIO is selected at compilation, provide the necessary locations to the MAPL include files and libraries.
 
-File modified only to add the profiling tool:
+`offline/lisdrv.F90`:
+- Reorganized this file to include two sections separed by preprocessing directives:
+    - The code that was in the original file and that works without the use of PFIO.
+    - A new code that contains the PFIO statements spawn all the MPI processes, creates the compute nodes and IO nodes (based on the command line parameters) and to drive the model.
+- Depending on the choice during the configuration step, one section of the code will be selcted for compilation.
+
+`core/LIS_coreMod.F90`: 
+- Declare and allocate variables needed by PFIO.
+- Do not finalize ESMF if PFIO is used.
+- Add preprocessing directives.
+
+`core/LIS_surfaceModelMod.F90`: 
+- Include calls from the module `LIS_PFIO_historyMod.F90` for the HISTORY creation.
+- Add preprocessing directives to differentiate HISTORY subroutine related calls involving PFIO or not.
+
+`core/LIS_PRIV_rcMod.F90`: 
+- Declared new variables:
+    - `do_ftiming` (do code profiling?)
+    - `n_vcollections` (num PFIO virtual collections)
+
+`core/LIS_readConfigMod.F90`: 
+- Added calls to read rc file variables for profiling or not, the number virtual collections (only need is PFIO used) and data compression parameters.
+
+File modified only for profiling:
  
 - `core/LIS_metforcingMod.F90`: 
 - `core/LIS_domainMod.F90`: 
@@ -105,9 +125,11 @@ Note that if PFIO is not selected during the configuration step, the excutable f
 ## Running the Code
 
 Here, we assume that the gererated executable has PFIO references.
-PFIO offers the option to run the code using either the standard `mpirun` command or an IO server (reserved for producing HISTORY only).
+PFIO offers the option to run the code using either the standard `mpirun` command or an IO server configuration (reserved for producing HISTORY only). 
+More infoormation can be obtained from the [PFIO description guide](https://github.com/GEOS-ESM/MAPL/wiki/PFIO:-a-High-Performance-Client-Server-I-O-Layer). 
+
 Because the LIS code only has one collection (one HISTORY file), we implemented the capability to create virtual HISTORY collections, 
-where the number of collection is chosed at run time in the `lis.config` file.
+where the number of collection is chosen at run time in the `lis.config` file.
 The file has the settings:
 
 ```
@@ -118,25 +140,32 @@ The file has the settings:
    netCDF deflate level:              1      # deflate level (0 as default)
 ```
 
-only one output server node (with any number of backend cores) is needed to use PFIO. Basically, we will have the command (assuming that we have 28 cores per node):
+In the SLURM script, it is important to pass the appropriate parameters from the command line:
+- The total number of reserved processors for the experiment.
+- The number of IO nodes.
+- The number of compute processors.
+- The number of backend cores per IO nodes. The total number of backend cores should be at least 2.
+
+If we reserve 308 processors (11 nodes with 28 cores per node) and select 2 IO nodes, the SLURM script could look like:
 
 ```
+   set       nodes_output = 2
+   set       npes_backend = 1
    set num_cores_per_node = 28
-   set           tot_npes = 224
-   @ comp_npes = ${tot_npes} - ${num_cores_per_node}
-   mpiexec -n $tot_npes $EXE --npes_model $comp_npes --oserver_type multigroup --nodes_output_server 1 --npes_backend_pernode 2
+   set           tot_npes = 308
+   $RUN_CMD $tot_npes LIS --npes_model $comp_npes --oserver_type multigroup --nodes_output_server $nodes_output --npes_backend_pernode $npes_backend
 ```
 
-Therefore, there is only one command line configuration when PFIO is used in LIS.
 
-For PFIO to be effective in LIS, we need at least two requirements:
-- The process to produce the HISTORY files is signficantly more expensive than the calculations.
-- The elapsed time between the full creation (writing into disk) two consecutive HISTORY files is less than the model integration time. 
-    -  If not, the ouput node might be continually oversubcribed. 
+While setting PFIO command line paramters, we need to assess the followinG;
+- Does the process to produce the HISTORY files is signficantly more expensive than the calculations.
+- The elapsed time between the full creation (writing into disk) of two consecutive HISTORY files is less than the model integration time. 
+    -  If not, the ouput node might be continually oversubcribed.  
     -  By principle in PFIO, the frontend processors (FPs) forward the data to the backend and they get back to the clients (compute processors) without waiting for the actual writing of the data. It is possible for the clients to send new requests to the FPs while the FPs are still sending data to the backend.
+    -  We recommend that we use at least 2 IO nodes with only one backend core per IO node.
 
-The LIS code does not have a profiler. In all the experiments we have done, we measure the total elapsed times.
-We plan to integrate a profiling tool in LIS that will allow us to better capture the time it takes to execute various components of the code.
+Choosing the right command line parameters for a specific experiment is a matter of trials and errors. 
+Users need to try different configurations until they determine the one that provide the best timing performane.
 
 ## Testing the New Code
 
