@@ -29,11 +29,25 @@ To achieve it, we made the decision to:
 
 ### New Files
 
-- `core/LIS_PFIO_historyMod.F90`: contains routines for HISTORY using PFIO calls. It mimics the steps avalaible in `LIS_historyMod.F90`. The main feauture of this module is the implementation of virtual HISTORY collections to take advantage of the capabilities of PFIO (that works best with multiple file collections). The inclusion of the virtual collections is the most critical feature that makes LIS/PFIO attractive and efficient.
-- `core/LIS_PFIO_varMod.F90`: module for defining variables needed to manipulate LIS data with PFIO.
-- `core/LIS_PFIO_utilsMod.F90`: module containing PFIO utilitiy routines.
-- `core/LIS_rcFileReading_mod.F90`: module containing utility routines to read rc variables and setting default values.
-- `core/LIS_ftimingMod.F90`: module containing utility routines to profile any MPI application.
+`core/LIS_PFIO_historyMod.F90`: 
+- Contains routines for HISTORY using PFIO calls. The main ones are: 
+    - `PFIO_create_file_metadata`: creates the netCDF file metadata and the PFIO History identifier. This sunroutine is called once.
+    - `PFIO_write_data`: does basic manipulations of the local data (for instance converting from tile to 2D array) and sends the local data (entire array without slicing) to the PFIO IO Server. This subroutine is called any time the model is ready to write the data.
+- It mimics the steps avalaible in `LIS_historyMod.F90`. 
+- The main feauture of this module is the implementation of virtual HISTORY collections to take advantage of the capabilities of PFIO (that works best with multiple file collections). 
+- The inclusion of the virtual collections is the most critical feature that makes LIS/PFIO attractive and efficient.
+
+`core/LIS_PFIO_varMod.F90`: 
+- Module for defining variables needed to manipulate LIS data with PFIO.
+
+`core/LIS_PFIO_utilsMod.F90`: 
+- Module containing PFIO utilitiy routines.
+
+`core/LIS_rcFileReading_mod.F90`: 
+- Module containing utility routines to read rc variables and setting default values.
+
+`core/LIS_ftimingMod.F90`: 
+- Module containing utility routines to profile any MPI application.
 
 ### Modified Files
 
