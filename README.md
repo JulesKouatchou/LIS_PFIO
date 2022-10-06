@@ -275,34 +275,55 @@ It is more likely due to the fact PFIO is not done before the model completes th
 **Table 1.2** LIS/PFIO: timiming statistics as the number of compute processors and the number of IO node vary. In each case, we use 2 backend cores per IO nodes and set the number virtual output collections to be two times the number of IO nodes.
 
 
-### Test Case 2
+### Test Case 1
 
+- Land surface model: `Noah-MP.4.0.1`
+- Output methodology: `2d gridspace`
+- Number of ensembles per tile: 1
 - 5901x2801 grid points
-- one-day integration with output produced every 1.5 hours (24 files with one record each)
+- one-day integration with output produced every 1.5 hours (17 files with one record each)
 - The fields to be written out are:
     - 80 2D fields
     - 4 3D fields (with 4 levels)
 - Each file without compression has a size of 6.43 Gb.
  
-|            | 84      |  112    | 140     | 168     | 196     | 224     | 1008    |
-|  ---       | ---:    |  ---:   | ---:    | ---:    | ---:    | ---:    | ---:    |
-| Run Method |  373.71 |  280.62 |  224.90 |  186.62 |  160.74 |  140.67 |  31.24  |
-| Output     | 1209.94 | 1229.54 | 1194.51 | 1228.61 | 1436.07 | 1420.89 | 1331.73 |
-| Overall    | 2269.26 | 2171.23 | 2069.12 | 2059.28 | 2235.15 | 2188.14 | 2050.97 |
 
-**Table 2.1** LIS: timiming statistics as the number of processors varies.
+| Model Configuration | # compute cores  | # IO Nodes | Calculations | HISTORY | 
+|       -----         | ----             |  ----      | ----:      | ----:   |
+| LIS                 | 504              |            |  61.67     | 1271.18 |
+|                     | 1008             |            |  30.78     | 1239.48 |
+| LIS/PFIO            |  504             |  2         |  62.34     | 3635.42 | 
+|                     |                  |  4         |  62.99     | 1039.46 |
+|                     | 1008             |  4         |  30.85     | 2535.18 |
+|                     |                  |  6         |  30.91     | 1321.33 |
+|                     |                  |  8         |  30.90     |  674.13 |
+
+**Table 1:** LIS and LIS/PFIO: timiming statistics as the number of compute processors and the number of IO node vary. In the LIS/PFIO case, we use 1 backend core per IO node and set the number virtual output collections to the number of IO nodes.
 
 
-| # compute cores  | # IO Nodes | Run Method | Output  | Overall |
-| ----             |  ----      | ----:      | ----:   | ----:   |
-| 224              |  2         | 143.93     | 1021.35 | 1963.34 |
-|                  |  3         | 144.25     |  535.86 | 1422.43 |
-| 504              |  2         |  64.10     | 2106.05 | 4799.04 |
-|                  |  3         |  64.07     | 1631.45 | 2358.15 |
-| 1008             |  6         |  31.81     | 1341.00 | 2270.67 |
-|                  |  8         |  31.81     |  603.19 | 1899.65 |
+### Test Case 2
 
-**Table 2.2** LIS/PFIO: timiming statistics as the number of compute processors and the number of IO node vary. In each case, we use 2 backend cores per IO nodes and set the number virtual output collections to be two times the number of IO nodes.
+- Land surface model: `Noah-MP.4.0.1`
+- Output methodology: `2d ensemble gridspace`
+- Number of ensembles per tile: 25
+- 5901x2801 grid points
+- one-day integration with output produced every 3 hours (9 files with one record each)
+- The fields to be written out are:
+    - 2 2D fields
+    - 8 3D fields (with the 25 ensembles)
+    - 2 4D fields (with the 25 ensembles and 4 
+- Each file without compression has a size of 6.43 Gb.
+ 
+
+| Model Configuration | # compute cores  | # IO Nodes | Calculations | HISTORY | 
+|       -----         | ----             |  ----      | ----:      | ----:   |
+| LIS                 | 252              |            |  89.95     | 2110.11 |
+|                     | 504              |            |  45.00     | 2150.35 |
+| LIS/PFIO            |  504             |  2         |  92.56     |  483.04 | 
+|                     |                  |  4         |  92.10     |   56.61 |
+
+
+**Table 2:** LIS and LIS/PFIO: timiming statistics as the number of compute processors and the number of IO node vary. In the LIS/PFIO case, we use 1 backend core per IO node and set the number virtual output collections to the number of IO nodes.
 
 <!---
 
