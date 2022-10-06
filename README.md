@@ -169,110 +169,12 @@ Users need to try different configurations until they determine the one that pro
 
 ## Testing the New Code
 
-### Model Configuration
+We used the same base code to create two different executables: 
+- `LIS_org`: does not use PFIO and exerises the original version of the code.
+- `LIS_pfio`: relies on PFIO to create HISTORY.
 
-- 5901x2801 grid points
-- one-day integration with output produced every 3 hours (8 files with one record each)
-- The fields to be written out are:
-    - 80 2D fields
-    - 4 3D fields (with 4 levels)
-
-Without any data compression, each output file produced here requires 6.43 Gb.
-Our goal here is not only to reduce the time spent on IO but also to decrease
-the file size by applying data compression.
-
-In all the experiment we did, the LIS/PFIO code produced bitwise identical results as the original version of the code.
-
-### Results with 112 Compute Cores
-
-We ran the orginal version of the LIS code (ORG) and the one with the PFIO implementation (PFIO) using a $14 \times 8$ processor decomposition.
-As the data compression level varies, we recorded the average output file size (out of 8 files)
-and the total time to complete the integration.
-
-It is assumed that the PFIO option uses one additional node (reserved for output) with repected to the original version of the code.
-
-| Deflation Level  | Average File Size |  | Total Time (s) |  |
-|--- | ---| --- | --- | --- |
-| | **ORG** | **PFIO** | **ORG** | **PFIO** |
-| 0 | 6.43 | 6.43 | 734 | 1023 |
-| 1 | 1.76 | 1.71 | 1484 | 1213 |
-| 3 | 1.74 | 1.65 | 1928 | 1403 |
-| 5 | 1.75 | 1.61 | 2121 | 1670 |
-| 7 | 1.74 | 1.59 | 3388 | 2376 |
-| 9 | 1.73 | 1.58 | 3948 | 8297 |
-
-
-![fig_stats](fig_lis_pfio_stats.png)
-
-### Results when the Number of Compute Cores Varies
-
-We use the data compression level of 1 and let the number of compute cores varies. 
-We record the total time for a one-day integration and the HISTORY file created every three hours.
-
-| # Compute Cores | **ORG** | **PFIO** | Gain/Loss |
-| ---- | --- | --- | --- |
-| $112=14 \times  8$ | 1484 | 1213 | +18% |
-| $140=14 \times 10$ | 1340 | 1198 | +11% |
-| $168=14 \times 12$ | 1292 | 1272 | +1.5%|
-| $196=14 \times 14$ | 1267 | 1374 | -8.4% |
-
-As the number of computee cores increases, PFIO becomes less attractive.
-It is more likely due to the fact PFIO is not done before the model completes the calculations, therefore creation data congestion in the output server node.
-
-### Test Case 1
-
-- 5901x2801 grid points
-- Four-day integration with output produced every 1.5 hours (73 files with one record each)
-- The fields to be written out are:
-    - 10 2D fields
-    - 2 3D fields (with 4 levels)
-- Each file without data compression has a size of 412 Mb.
-
-
-|            | 84      |  112    | 140     | 168    | 196    | 224    | 504     | 1008   |
-|  ---       | ---:    |  ---:   | ---:    | ---:   | ---:   | ---:   | ---:    | ---:   |
-| Run Method |  817.88 |  614.58 |  491.55 | 410.19 | 350.77 | 307.14 |  137.03 |  68.35 |
-| Output     |  395.95 |  334.99 |  299.88 | 290.55 | 268.05 | 252.47 |  364.71 | 216.24 |
-| Overall    | 1495.24 | 1224.56 | 1062.53 | 968.48 | 889.67 | 825.61 |  687.49 | 555.93 |
-
-**Table 1.1** LIS: timiming statistics as the number of processors varies.
-
-
-<!---
-
-|            | 84      |  112    | 140     | 168    | 196    | 224    | 504     |
-|  ---       | ---:    |  ---:   | ---:    | ---:   | ---:   | ---:   | ---:    |
-| Run Method |  832.05 |  623.94 |  502.99 | 415.53 | 356.62 | 312.93 | 137.37 |
-| Output     |   67.20 |   70.05 |   60.47 |  61.79 |  59.91 |  56.82 | 942.47 |
-| Overall    | 1242.06 |  975.82 |  829.25 | 728.86 | 647.03 | 604.91 |1289.03 |
-
-**Table 1.2** LIS/PFIO: timiming statistics as the number of processors varies and there is one IO node.
-
-|            | 84      |  112    | 140     | 168    | 196    | 224    | 504     |
-|  ---       | ---:    |  ---:   | ---:    | ---:   | ---:   | ---:   | ---:    |
-| Run Method |  821.71 |  622.39 |  503.77 | 414.20 | 353.00 | 309.48 | 140.17  |
-| Output     |   36.67 |   37.21 |   37.97 |  38.27 |  36.16 |  33.12 | 193.81  |
-| Overall    | 1235.62 |  987.85 |  821.78 | 720.89 | 637.72 | 565.33 | 553.24  |
-
-**Table 1.3** LIS/PFIO: timiming statistics as the number of processors varies and there are two IO nodes. There are four virtual collections and 2 backend cores per node.
-
---->
-
-| # compute cores  | # IO Nodes | Run Method | Output  | Overall |
-| ----             |  ----      | ----:      | ----:   | ----:   |
-| 224              |  1         | 312.93     |  56.82  |  604.91 |
-|                  |  2         | 309.48     |  33.12  |  565.33 |
-| 504              |  1         | 137.37     | 942.47  | 1289.03 |
-|                  |  2         | 140.17     | 193.81  |  553.24 |
-|                  |  3         | 139.95     |  78.22  |  425.78 |
-| 644              |  3         | 114.77     | 134.53  |  447.00 |
-|                  |  4         |            |         |         |
-| 784              |  3         |  89.97     | 284.14  |  574.70 |
-|                  |  4         |            |         |         |
-| 1008             |  4         |   69.97    | 217.53  |  495.42 |
-|                  |  5         |   70.01    | 135.00  |  397.69 |
-
-**Table 1.2** LIS/PFIO: timiming statistics as the number of compute processors and the number of IO node vary. In each case, we use 2 backend cores per IO nodes and set the number virtual output collections to be two times the number of IO nodes.
+In each of the two cases presented her, we ran experiments as the number of compute processors varies.
+In the case of `LIS_pfio`
 
 
 ### Test Case 1
@@ -289,14 +191,14 @@ It is more likely due to the fact PFIO is not done before the model completes th
  
 
 | Model Configuration | # compute cores  | # IO Nodes | Calculations | HISTORY | 
-|       -----         | ----             |  ----      | ----:      | ----:   |
-| LIS                 | 504              |            |  61.67     | 1271.18 |
-|                     | 1008             |            |  30.78     | 1239.48 |
-| LIS/PFIO            |  504             |  2         |  62.34     | 3635.42 | 
-|                     |                  |  4         |  62.99     | 1039.46 |
-|                     | 1008             |  4         |  30.85     | 2535.18 |
-|                     |                  |  6         |  30.91     | 1321.33 |
-|                     |                  |  8         |  30.90     |  674.13 |
+|       -----         | ----:            |  ----:     | ----:        | ----:   |
+| LIS                 | 504              |            |  61.67       | 1271.18 |
+|                     | 1008             |            |  30.78       | 1239.48 |
+| LIS/PFIO            |  504             |  2         |  62.34       | 3635.42 | 
+|                     |                  |  4         |  62.99       | 1039.46 |
+|                     | 1008             |  4         |  30.85       | 2535.18 |
+|                     |                  |  6         |  30.91       | 1321.33 |
+|                     |                  |  8         |  30.90       |  674.13 |
 
 **Table 1:** LIS and LIS/PFIO: timiming statistics as the number of compute processors and the number of IO node vary. In the LIS/PFIO case, we use 1 backend core per IO node and set the number virtual output collections to the number of IO nodes.
 
@@ -312,31 +214,34 @@ It is more likely due to the fact PFIO is not done before the model completes th
     - 2 2D fields
     - 8 3D fields (with the 25 ensembles)
     - 2 4D fields (with the 25 ensembles and 4 
-- Each file without compression has a size of 6.43 Gb.
+- Each file without compression has a size of 9.09 Gb.
  
 
 | Model Configuration | # compute cores  | # IO Nodes | Calculations | HISTORY | 
-|       -----         | ----             |  ----      | ----:      | ----:   |
+|       -----         | ----:            |  ----:     | ----:      | ----:   |
 | LIS                 | 252              |            |  89.95     | 2110.11 |
 |                     | 504              |            |  45.00     | 2150.35 |
 | LIS/PFIO            |  504             |  2         |  92.56     |  483.04 | 
 |                     |                  |  4         |  92.10     |   56.61 |
 
-
 **Table 2:** LIS and LIS/PFIO: timiming statistics as the number of compute processors and the number of IO node vary. In the LIS/PFIO case, we use 1 backend core per IO node and set the number virtual output collections to the number of IO nodes.
 
-<!---
+In this particicular test case, PFIO outperforms the original version of the code. 
+The main reason is that in the original version of the code, the IO module only manipulates 2D fiels. When there is an additional dimension for instance, the code loops over the new dimension, leading to several SENDs (increase communications) to the root processor and WRITEs to the disc by the root processor (increase of the access to the file system). 
+With LIS/PFIO, there is no loop over the additional dimensions as the entire data array is sends to the IO server which will write the global array once.
 
-#### Comments
 
-From the above statistics, we can make the following comments:
+### Observations
 
-- Using the deflation level 1 is most cost effective in both ORG and PFIO.
-    - At such level, PFIO runs faster and tends to generate a smaller file size.
-- At deflation level 9, the time to collect the data and do data compression appears to be higher than the model computing time. PFIO performs very poorly.
-- PFIO works better when the model computations require more time than the communications between the computing cores and the IO servers.
+- LIS/PFIO produces files bitwise identical to the original version of the code.
+- LIS/PFIO requires less computing resources to achieve the same wall-clock time as the original LIS.
+- The use of virtual collections significantly improves the IO performance.
+- The configuration nature of PFIO allows using to test several options before find the one that will give the best performance.
 - As we increase the model resolution and the IO dominates the model calculations, we expect PFIO to perform better.
+- Using the deflation level of 1 is most cost effective in both ORG and PFIO.
+    - At such level, PFIO tends to generate a smaller file size.
 
+<!---
 --->
 
 
