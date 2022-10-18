@@ -221,7 +221,7 @@ In the case of `LIS_pfio`
 |       -----         | ----:            |  ----:     | ----:      | ----:   |
 | LIS                 | 252              |            |  89.95     | 2110.11 |
 |                     | 504              |            |  45.00     | 2150.35 |
-| LIS/PFIO            |  504             |  2         |  92.56     |  483.04 | 
+| LIS/PFIO            |  252             |  2         |  92.56     |  483.04 | 
 |                     |                  |  4         |  92.10     |   56.61 |
 
 **Table 2:** LIS and LIS/PFIO: timiming statistics as the number of compute processors and the number of IO node vary. In the LIS/PFIO case, we use 1 backend core per IO node and set the number virtual output collections to the number of IO nodes.
