@@ -4,10 +4,11 @@
 
 The [Land Information System](https://lis.gsfc.nasa.gov/) (LIS) is a software framework for high performance terrestrial hydrology modeling and data assimilation developed with the goal of integrating satellite and ground-based observational data products and advanced modeling techniques to produce optimal fields of land surface states and fluxes.
 The framework consists of three modeling components, one of which is the Land Information System (LIS): the modeling system that encapsulates physical models, data assimilation algorithms, optimization and uncertainty estimation algorithms, and high performance computing support. 
+
 The section of the LIS code involved in calculations is embarrassedly parallel and can scale up to thousands of processors. 
-The model produces a HISTORY collection. As the number of processor increases, the time to create the output may be several order of magnitude greater than the time for computations. 
+The model produces a HISTORY collection. As the number of processor increases, the time to create HISTORY may be several order of magnitude greater than the time for computations. 
 That is a major bottleneck for LIS users who want to run the model at higher resolutions and with thousands of processors. 
-The main challenge in the output procedure is that the root processor is in charge of gathering the data from all the other processors and writing data into disc.
+The main challenge in the output procedure is that the root processor is in charge of gathering the data from all the other processors and writing data into disc (while all the other processors are waiting for the next set of calculations).
 It is not possible to scale or speed up this procedure in a distributed environement.
 
 We have [explored several methods](https://github.com/JulesKouatchou/LIS_profiling) to find ways to improve the IO performance in the LIS code.
@@ -20,19 +21,33 @@ Finally, we present the performance of LIS/PFIO.
 
 ## Implementation Steps
 
-### Requirement
+### Requirements
 The goal is to modify the code and make sure that it can compile and run with or without PFIO.
 To achieve it, we made the decision to:
-- Add the PFIO module as an external library of LIS. The GEOS MAPL (where PFIO is a subcomponent) was compiled and installed as a LIS external library.
+- Add the PFIO module as an external library of LIS. The GEOS MAPL (where PFIO is a subcomponent) was compiled and installed as an external library for LIS.
 - Any PFIO related section should be selected a compilation time. We added preprocessing directives throughout the code to facilitate the implementation of PFIO by maintaining the original functionalities of the code.
 
+If the above two requirements are sastified, the same base code can be used by LIS users (in a transparent way),
+and the new additions will interfer to any LIS code development.
 
 ### New Files
+
+Our main objective was to producde HISTORY (in a netCDF file format) without disrupting any other LIS process.
+We used the existing LIS infrastructure and create a new component to receive LIS field arrays 
+(as one-dimentional tiles), transform them (as two-dimensional arrays), and pass the transformed arrays to the PFIO I/O Server.
+We used as reference the steps contained in the original file `LIS_historyMod.F90` that has all the utility routines for
+output procedures. 
+
+One advantage of PFIO is that works with variable names but not with variable ids (as when we directly use netCDF calls).
+Our task was to write routines that keep track of variable names (including for dimensions) only.
+We created the following files to support our implementation of PFIO in LIS.
+
 
 `core/LIS_PFIO_historyMod.F90`: 
 - Contains routines for HISTORY using PFIO calls. The main ones are: 
     - `PFIO_create_file_metadata`: creates the netCDF file metadata and the PFIO History identifier. This sunroutine is called once.
     - `PFIO_write_data`: does basic manipulations of the local data (for instance converting from tile to 2D array) and sends the local data (entire array without slicing) to the PFIO IO Server. This subroutine is called any time the model is ready to write the data.
+    - 
 - It mimics the steps avalaible in `LIS_historyMod.F90`. 
 - The main feauture of this module is the implementation of virtual HISTORY collections to take advantage of the capabilities of PFIO (that works best with multiple file collections). 
 - The inclusion of the virtual collections is the most critical feature that makes LIS/PFIO attractive and efficient.
