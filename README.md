@@ -258,13 +258,15 @@ With LIS/PFIO, there is no loop over the additional dimensions as the entire dat
 - As we increase the model resolution and the IO dominates the model calculations, we expect PFIO to perform better.
 - Using the deflation level of 1 is most cost effective in both ORG and PFIO.
     - At such level, PFIO tends to generate a smaller file size.
+- **It is also important to note that even if we use the `Simple Server` configuration of PFIO (regular `mpirun` command also used in the regular LIS code), LIS/PFIO still performs better than LIS.**
 
 
-## Pensing Issues
+## Pending Issues
 
-- In the current setting of LIS/PFIO, it is assumed that the configuration file is located in the working directory and is named `lis.config`. This is not the ideal situation. We need to pass the configuration file from the command line. This needs to be done by GMAO.
-- Implement the “1d tilespace” configuration. I do not know how this is important. It can only be done if PFIO manipulates 1D arrays.
+- Implement the `1d tilespace` configuration. I do not know how this is important. It can only be done if PFIO manipulates 1D arrays.
 - Allow PFIO to handle the restart file too. This will be the ideal but the way the LIS code is structured (each land surface model has its own calls to create its restart file), I do not think it will be practical to do this.
+
+__I spent time to address the above issues and observed that they were related. I concluded that it is not possible to use PFIO for the `1d tilespace` configuration and for the restart file. The reason is that each local 1D tile (in `1d tilespace`) does not contain data for only a specific 2D subdomain but data that extend to multiple subdomains. With PFIO, we assume that each local process has data a specific subdomain.__
 
 <!---
 --->
