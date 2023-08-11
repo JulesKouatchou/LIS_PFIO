@@ -79,7 +79,7 @@ Files modified mainly to accommodate PFIO:
 - Reorganized this file to include two sections separed by preprocessing directives:
     - The code that was in the original file and that works without the use of PFIO.
     - A new code that contains the PFIO statements spawn all the MPI processes, creates the compute nodes and IO nodes (based on the command line parameters) and to drive the model.
-- Depending on the choice during the configuration step, one section of the code will be selcted for compilation.
+- Depending on the choice during the configuration step, one section of the code will be selected for compilation.
 
 `core/LIS_coreMod.F90`: 
 - Declare and allocate variables needed by PFIO.
@@ -88,7 +88,7 @@ Files modified mainly to accommodate PFIO:
 
 `core/LIS_surfaceModelMod.F90`: 
 - Include calls from the module `LIS_PFIO_historyMod.F90` for the HISTORY creation.
-- Add preprocessing directives to differentiate HISTORY subroutine related calls involving PFIO or not.
+- Add preprocessing directives to differentiate HISTORY subroutine related to calls involving PFIO or not.
 
 `core/LIS_PRIV_rcMod.F90`: 
 - Declared new variables:
@@ -97,6 +97,10 @@ Files modified mainly to accommodate PFIO:
 
 `core/LIS_readConfigMod.F90`: 
 - Added calls to read rc file variables for profiling or not, the number virtual collections (only need is PFIO used) and data compression parameters.
+
+`core/LIS_domainMod.F90`:
+- Set the variables `LIS_rc%procLayoutx = Pc` and `LIS_rc%procLayouty = Pr`.
+- Added profiling calls.
 
 File modified only for profiling:
  
@@ -131,6 +135,32 @@ In addition, the folowing configuration settings:
 
 are no longer needed because the three parameters are now set at run time in the `lis.config` file.
 
+After running the `configure` script successfully, a summary of the settings used will be printed on the screen:  
+
+```
+----------------------------------------------------
+------------- SUMMARY of the SETTINGS --------------
+----------------------------------------------------
+                                     Parallelism: 1
+                 Use PFIO to produce nc4 HISTORY? 1
+                              Optimization level: 2
+            Assume little/big_endian data format: 2
+                             Use GRIBAPI/ECCODES? 2
+Enable AFWA-specific grib configuration settings? 0
+                                      Use NETCDF? 1
+                                  NETCDF version: 4
+                                        Use HDF4? 1
+                                        Use HDF5? 1
+                                      Use HDFEOS? 1
+                                     Use MINPACK? 0
+                                    Use LIS-CRTM? 0
+                                    Use LIS-CHEM? 0
+                                  Use LIS-LAPACK? 0
+                              Use LIS-MKL-LAPACK? 0
+                                       Use PETSc? 0
+----------------------------------------------------
+```
+
 When the configuration is done, users need to execute the compilation script:
 
 ```bash
@@ -151,11 +181,11 @@ where the number of collection is chosen at run time in the `lis.config` file.
 The file has the settings:
 
 ```
-   Profiling Tool:                    yes    # do you want to profile the code (no as default)? 
-   num PFIO virtual collections:      4      # number of virtual collections (1 as default)
+   Profiling Tool:                    .TRUE.  # do you want to profile the code (no as default)? 
+   num PFIO virtual collections:      4       # number of virtual collections (1 as default)
    netCDF shuffle filter:             0
    netCDF deflate filter:             1
-   netCDF deflate level:              1      # deflate level (0 as default)
+   netCDF deflate level:              1       # deflate level (0 as default)
 ```
 
 In the SLURM script, it is important to pass the appropriate parameters from the command line:
@@ -191,7 +221,7 @@ We used the same base code to create two different executables:
 - `LIS_org`: does not use PFIO and exerises the original version of the code.
 - `LIS_pfio`: relies on PFIO to create HISTORY.
 
-In each of the two cases presented her, we ran experiments as the number of compute processors varies.
+In each of the two cases presented here, we ran experiments as the number of compute processors varies.
 In the case of `LIS_pfio`
 
 
