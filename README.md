@@ -90,19 +90,31 @@ Files modified mainly to accommodate PFIO:
 - Include calls from the module `LIS_PFIO_historyMod.F90` for the HISTORY creation.
 - Add preprocessing directives to differentiate HISTORY subroutine related to calls involving PFIO or not.
 
+`core/LIS_historyMod.F90`: 
+
+To allow the netCDF data compression parameters to be set at run time in the `lis.config` file, we added the following:
+```
+    shuffle       = LIS_rc%nc_shuffle        ! NETCDF_shuffle
+    deflate       = LIS_rc%nc_deflate        ! NETCDF_deflate
+    deflate_level = LIS_rc%nc_deflate_lvl    ! NETCDF_deflate_level
+```
+
 `core/LIS_PRIV_rcMod.F90`: 
 - Declared new variables:
     - `do_ftiming` (do code profiling?)
     - `n_vcollections` (num PFIO virtual collections)
+    - `nc_shuffle`: NETCDF shuffle filter
+    - `nc_deflate`: NETCDF deflate filter
+    - `nc_deflate_lvl`: NETCDF deflate level
 
 `core/LIS_readConfigMod.F90`: 
 - Added calls to read rc file variables for profiling or not, the number virtual collections (only need is PFIO used) and data compression parameters.
 
 `core/LIS_domainMod.F90`:
-- Set the variables `LIS_rc%procLayoutx = Pc` and `LIS_rc%procLayouty = Pr`.
+- Set the variables `LIS_rc%procLayoutx = Pc` and `LIS_rc%procLayouty = Pr` that are needed by the profiling tool.
 - Added profiling calls.
 
-File modified only for profiling:
+Files modified only for profiling:
  
 - `core/LIS_metforcingMod.F90`: 
 - `core/LIS_domainMod.F90`: 
