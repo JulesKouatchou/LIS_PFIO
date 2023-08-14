@@ -135,7 +135,7 @@ In the dialogue, there is now a new option:
    Use PFIO to produce nc4 HISTORY (1-yes, 0-no, default=0):
 ```
 
-where with the default value (`0`) will generate a code that works without PFIO, i.e., the original LIS code (with not PFIO library and related calls).
+where the default value (`0`) will generate a code that works without PFIO, i.e., the original LIS code (with not PFIO library and related calls).
 
 In addition, the folowing configuration settings:
 
@@ -147,7 +147,7 @@ In addition, the folowing configuration settings:
 
 are no longer needed because the three parameters are now set at run time in the `lis.config` file.
 
-After running the `configure` script successfully, a summary of the settings used will be printed on the screen:  
+After successfully running the `configure` script, a summary of the settings used will be printed on the screen:  
 
 ```
 ----------------------------------------------------
