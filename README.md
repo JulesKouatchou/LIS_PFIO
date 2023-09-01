@@ -206,26 +206,63 @@ In the SLURM script, it is important to pass the appropriate parameters from the
 - The number of compute processors.
 - The number of backend cores per IO nodes. The total number of backend cores should be at least 2.
 
-If we reserve 308 processors (11 nodes with 28 cores per node) and select 2 IO nodes, the SLURM script could look like:
+If we reserve 600 processors (15 nodes with 40 cores per node) and select 5 IO nodes, the SLURM script could look like:
 
 ```
-   set       nodes_output = 2
+   source /usr/share/modules/init/csh
+   module purge
+   module use --append /discover/nobackup/jkouatch/LIS_PROJECT/MAPL_LIS/modulefiles
+   module load lisf_7_intel_2021.6.0_mapl
+
+   set       nodes_output = 5
    set       npes_backend = 1
-   set num_cores_per_node = 28
-   set           tot_npes = 308
-   $RUN_CMD $tot_npes LIS --npes_model $comp_npes --oserver_type multigroup --nodes_output_server $nodes_output --npes_backend_pernode $npes_backend
+   set num_cores_per_node = 40
+   set           tot_npes = 600
+   @ comp_npes = ${tot_npes} - ( ${nodes_output} * ${num_cores_per_node} )
+
+   setenv RUN_CMD "time mpiexec -np"
+   $RUN_CMD $tot_npes $EXE --npes_model $comp_npes --oserver_type multigroup --nodes_output_server $nodes_output --npes_backend_pernode $npes_backend -f lis.config
 ```
 
-
-While setting PFIO command line paramters, we need to assess the followinG;
+While setting PFIO command line paramters, we need to assess the following:
 - Does the process to produce the HISTORY files is signficantly more expensive than the calculations.
 - The elapsed time between the full creation (writing into disk) of two consecutive HISTORY files is less than the model integration time. 
-    -  If not, the ouput node might be continually oversubcribed.  
+    -  If not, the ouput node might be continually oversubscribed.  
     -  By principle in PFIO, the frontend processors (FPs) forward the data to the backend and they get back to the clients (compute processors) without waiting for the actual writing of the data. It is possible for the clients to send new requests to the FPs while the FPs are still sending data to the backend.
-    -  We recommend that we use at least 2 IO nodes with only one backend core per IO node.
+    -  __We recommend that we use at least 2 IO nodes with only one backend core per IO node__.
 
 Choosing the right command line parameters for a specific experiment is a matter of trials and errors. 
 Users need to try different configurations until they determine the one that provide the best timing performane.
+
+## Sample profiling output
+
+When users have the following setting in the `lis.config` file:
+
+```
+    Profiling Tool:    yes
+```
+the code will gather timing statistics on predefined (in source code) components.
+When the run is completed, a file `fitiming_YYYYMMDD_HHMMSS_NXxNY` (`YYYYMMDD` is the date, `HHMMSS` is the time, `NX` is the number of compute cores along the x-direction and 'NY` the ones along the y-direction) will be generated. A sample file (say `ftiming_20230811_120155_0025x0024`) includes:
+
+```
+ -------------------------------------------------
+      Block                       Min Time    Max Time    Avg Time
+ -------------------------------------------------
+   Total Model                    889.2243    890.6964    890.4158
+   LIS_init                        48.1312     52.0210     49.5490
+   LIS_init/dom_init                8.3119      9.6774      9.4067
+   LIS_init/param_init              0.1355      0.3679      0.2709
+   LIS_init/sf_setup               38.4508     40.5557     39.6781
+   LIS_run                        838.5697    841.7864    840.8668
+   LIS_run/param_dynsetup           0.0773      0.2359      0.0953
+   LIS_run/metf_get                 9.1841     24.4011      9.5335
+   LIS_run/sf_run                  20.1201     26.1382     22.7155
+   LIS_run/sf_output              589.3674    798.8623    595.9385
+   LIS_run/sf_writerst              0.0001      0.0025      0.0001
+```
+We can observed that most of the time is spent in producing the history (`LIS_run/sf_output`)
+while the calculation time (`LIS_run/sf_run`) is negligeable.
+
 
 ## Testing the New Code
 
